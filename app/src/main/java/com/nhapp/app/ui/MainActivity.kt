@@ -13,6 +13,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
 import com.nhapp.app.Prefs
+import com.nhapp.app.data.Downloads
 import com.nhapp.app.data.Library
 import com.nhapp.app.util.Updater
 
@@ -21,6 +22,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         Library.load()
+        Downloads.load()
         Home.init(lifecycleScope)
         setContent {
             AppTheme {
@@ -34,6 +36,7 @@ class MainActivity : ComponentActivity() {
                             is Route.Results -> ResultsScreen(route, lifecycleScope)
                             is Route.Detail -> DetailScreen(route)
                             is Route.Reader -> ReaderScreen(route)
+                            is Route.Tags -> TagsScreen(route)
                             Route.Settings -> SettingsScreen()
                         }
                     }

@@ -42,6 +42,8 @@ data class Gallery(
     val tags: List<Tag>,
     val pages: List<Page>,
     val related: List<GallerySummary>,
+    /** API 原始 JSON，下載時存成 meta.json 供離線使用 */
+    val raw: String = "",
 ) {
     fun toSummary() = GallerySummary(
         id, mediaId, englishTitle, japaneseTitle, thumb, 250, 353, numPages, numFavorites, tags.map { it.id },
@@ -122,10 +124,23 @@ object Api {
         return (0 until arr.length()).map { parseSummary(arr.getJSONObject(it)) }
     }
 
+    /** 某類標籤依作品數排序，例如 artist＝知名作者；回傳（標籤, 總頁數） */
+    suspend fun tags(type: String, page: Int): Pair<List<Tag>, Int> {
+        val o = JSONObject(get("/tags/$type", mapOf("sort" to "popular", "page" to page)))
+        val a = o.getJSONArray("result")
+        val list = (0 until a.length()).map {
+            val t = a.getJSONObject(it)
+            Tag(t.getInt("id"), t.optString("type"), t.optString("name"), t.optInt("count"))
+        }
+        return list to o.optInt("num_pages", 1)
+    }
+
     suspend fun random(): Int = JSONObject(get("/galleries/random")).getInt("id")
 
-    suspend fun gallery(id: Int): Gallery {
-        val o = JSONObject(get("/galleries/$id", mapOf("include" to "related")))
+    suspend fun gallery(id: Int): Gallery = parseGallery(get("/galleries/$id", mapOf("include" to "related")))
+
+    fun parseGallery(raw: String): Gallery {
+        val o = JSONObject(raw)
         val title = o.getJSONObject("title")
         val tags = o.optJSONArray("tags")?.let { a ->
             (0 until a.length()).map {
@@ -160,6 +175,7 @@ object Api {
             tags = tags,
             pages = pages,
             related = related,
+            raw = raw,
         )
     }
 

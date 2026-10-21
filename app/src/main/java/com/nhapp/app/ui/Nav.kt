@@ -5,7 +5,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.lazy.LazyListState
+import com.nhapp.app.net.Api
 import com.nhapp.app.net.Gallery
+import com.nhapp.app.net.Tag
 import com.nhapp.app.net.GallerySummary
 import com.nhapp.app.net.PageResult
 import kotlinx.coroutines.CoroutineScope
@@ -59,6 +62,37 @@ class Feed(private val scope: CoroutineScope, private val loader: suspend (page:
     }
 }
 
+/** 標籤清單（分類頁），跟 [Feed] 一樣捲到底載下一頁 */
+class TagFeed(private val scope: CoroutineScope, private val type: String) {
+    val items = mutableStateListOf<Tag>()
+    var loading by mutableStateOf(false)
+        private set
+    var error by mutableStateOf<String?>(null)
+        private set
+    var end by mutableStateOf(false)
+        private set
+    val list = LazyListState()
+    private var page = 0
+
+    fun loadMore() {
+        if (loading || end) return
+        loading = true
+        error = null
+        scope.launch {
+            try {
+                val (tags, pages) = Api.tags(type, page + 1)
+                page++
+                items.addAll(tags)
+                if (tags.isEmpty() || page >= pages) end = true
+            } catch (e: Exception) {
+                error = e.message ?: e.toString()
+            } finally {
+                loading = false
+            }
+        }
+    }
+}
+
 /** 排序選項：API 參數 to 顯示名稱 */
 val SORTS = listOf(
     "date" to "最新",
@@ -92,6 +126,12 @@ sealed class Route {
     }
 
     class Reader(val gallery: Gallery, val startPage: Int) : Route()
+
+    /** 分類瀏覽：知名作者、社團、原作… */
+    class Tags(type: String) : Route() {
+        var type by mutableStateOf(type)
+        val feeds = HashMap<String, TagFeed>()
+    }
 
     object Settings : Route()
 }

@@ -29,6 +29,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -79,7 +80,8 @@ fun withLanguage(query: String): String {
 
 /** 首頁的列表狀態，整個 App 共用，切分頁不會重新載入 */
 object Home {
-    private lateinit var scope: CoroutineScope
+    lateinit var scope: CoroutineScope
+        private set
     lateinit var latest: Feed
         private set
     lateinit var popular: Feed
@@ -122,6 +124,7 @@ fun HomeScreen() {
         Box(Modifier.weight(1f)) {
             when (Home.tab) {
                 0 -> FeedGrid(Home.latest, header = {
+                    fullWidth("categories") { CategoryEntryRow() }
                     if (Home.popularNow.isNotEmpty()) {
                         fullWidth("now") { PopularNowRow(Home.popularNow) }
                         fullWidth("latestTitle") { SectionTitle("最新上傳") }
@@ -137,8 +140,9 @@ fun HomeScreen() {
                         }, hideDate = true)
                     }
                 })
-                2 -> LocalList(Library.favorites, "還沒有收藏，在作品頁按愛心加入")
-                3 -> LocalList(Library.history, "還沒有閱讀紀錄", onClear = { Library.clearHistory() })
+                2 -> BookshelfScreen()
+                3 -> LocalList(Library.favorites, "還沒有收藏，在作品頁按愛心加入")
+                4 -> LocalList(Library.history, "還沒有閱讀紀錄", onClear = { Library.clearHistory() })
             }
         }
         BottomTabs()
@@ -194,6 +198,7 @@ private fun BottomTabs() {
     val tabs = listOf<Pair<String, ImageVector>>(
         "首頁" to Icons.Filled.Home,
         "熱門" to Icons.Filled.Star,
+        "書櫃" to Icons.Filled.Menu,
         "收藏" to Icons.Filled.Favorite,
         "紀錄" to Icons.Filled.Refresh,
     )

@@ -2,6 +2,7 @@ package com.nhapp.app.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -74,13 +75,20 @@ private val LANG_BADGE = mapOf(29963 to "中", 6346 to "日", 12227 to "EN")
 fun GallerySummary.displayTitle(): String =
     if (Prefs.japaneseTitle && japaneseTitle.isNotBlank()) japaneseTitle else englishTitle.ifBlank { japaneseTitle }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
-fun GalleryCard(g: GallerySummary, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun GalleryCard(
+    g: GallerySummary,
+    modifier: Modifier = Modifier,
+    onLongClick: (() -> Unit)? = null,
+    overlay: @Composable (androidx.compose.foundation.layout.BoxScope.() -> Unit)? = null,
+    onClick: () -> Unit,
+) {
     Box(
         modifier
             .clip(RoundedCornerShape(6.dp))
             .background(Surface)
-            .clickable(onClick = onClick)
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick)
             .aspectRatio(0.7f)
     ) {
         AsyncImage(
@@ -127,6 +135,7 @@ fun GalleryCard(g: GallerySummary, modifier: Modifier = Modifier, onClick: () ->
                 .background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xE6000000))))
                 .padding(start = 6.dp, end = 6.dp, top = 16.dp, bottom = 6.dp),
         )
+        overlay?.invoke(this)
     }
 }
 
