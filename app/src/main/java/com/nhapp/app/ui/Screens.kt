@@ -68,6 +68,7 @@ import com.nhapp.app.Prefs
 import com.nhapp.app.data.Library
 import com.nhapp.app.net.Api
 import com.nhapp.app.net.GallerySummary
+import com.nhapp.app.util.Updater
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -346,7 +347,7 @@ fun SettingsScreen() {
                 lineHeight = 20.sp,
             )
             Spacer(Modifier.height(20.dp))
-            Text("版本 ${com.nhapp.app.BuildConfig.VERSION_NAME}", color = Color.Gray, fontSize = 12.sp)
+            UpdateRow()
         }
     }
 }
@@ -366,5 +367,42 @@ private fun SwitchRow(title: String, sub: String, checked: Boolean, onChange: (B
             Text(sub, color = Color.Gray, fontSize = 12.sp)
         }
         Switch(checked = checked, onCheckedChange = onChange)
+    }
+}
+
+/** 手動檢查更新；有新版就交給主畫面的更新視窗（手動檢查時不管「略過這個版本」） */
+@Composable
+private fun UpdateRow() {
+    val scope = rememberCoroutineScope()
+    var status by remember { mutableStateOf<String?>(null) }
+    var checking by remember { mutableStateOf(false) }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(enabled = !checking) {
+                checking = true
+                status = "檢查中…"
+                scope.launch {
+                    status = try {
+                        val r = Updater.check()
+                        if (r != null) {
+                            Updater.pending = r
+                            "有新版本 ${r.name.removePrefix("NHApp ")}"
+                        } else "已經是最新版"
+                    } catch (e: Exception) {
+                        "檢查失敗：${e.message}"
+                    }
+                    checking = false
+                }
+            }
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text("檢查更新", color = Color.White)
+            Text("目前版本 ${Updater.currentVersionName}", color = Color.Gray, fontSize = 12.sp)
+        }
+        status?.let { Text(it, color = if (it.startsWith("有新版本")) Accent else Color.Gray, fontSize = 13.sp) }
     }
 }
